@@ -1,7 +1,8 @@
 const express = require("express");
 const app = express();
 const users = require("../users.json");
-const { checkIfExists } = require("../middlewares/user");
+const { body, validationResult } = require("express-validator");
+const slugify = require("slugify");
 
 // une route qui renvoie tous les users
 app.get("/", (req, res) => {
@@ -10,14 +11,46 @@ app.get("/", (req, res) => {
 
 // une route qui pour 1 user grace au slug
 
-app.get("/:slug", checkIfExists, (req, res) => {
-  console.log(req.user);
+app.get("/:slug", (req, res) => {
+  const { slug } = req.params;
+
+  const user = users.find((user) => {
+    return slug === user.slug;
+  });
+  res.json(user);
 });
 
 // Une route qui crée un user
 
-app.post("/new-user", (req, res) => {
-  console.log("ok");
-});
+app.post(
+  "/new-user",
+  body("name").isLength({ min: 4 }),
+  body("password")
+    .exists()
+    .isLength({ min: 8 })
+    .withMessage("error: you pw less than 8"),
+  body("city")
+    .exists()
+    .isIn(["Paris", "Tokyo", "Los Angeles"])
+    .withMessage("Invalide city"),
+  body("email").exists().isEmail().withMessage("Invalid email"),
+  (req, res) => {
+    const { errors } = validationResult(req);
+    console.log(errors);
+    const user = {
+      ...req.body,
+      slug: slugify(req.body.name),
+    };
+
+    //   if (errors.length > 0) {
+    //     res.status(400).json(errors);
+    //   } else {
+    //     res.json(req.body);
+    //   }
+
+    users.push(user);
+    res.json(user);
+  }
+);
 
 module.exports = app;
