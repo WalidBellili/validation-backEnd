@@ -17,7 +17,12 @@ app.get("/:slug", (req, res) => {
   const user = users.find((user) => {
     return slug === user.slug;
   });
-  res.json(user);
+
+  if (user) {
+    res.json(user);
+  } else {
+    res.status(404).json("not found");
+  }
 });
 
 // Une route qui crée un user
@@ -39,14 +44,14 @@ app.post(
     console.log(errors);
     const user = {
       ...req.body,
-      slug: slugify(req.body.name),
+      slug: slugify(req.body.name, { lower: false }),
     };
 
-    //   if (errors.length > 0) {
-    //     res.status(400).json(errors);
-    //   } else {
-    //     res.json(req.body);
-    //   }
+    if (errors.length > 0) {
+      res.status(400).json(errors);
+    } else {
+      res.json(req.body);
+    }
 
     users.push(user);
     res.json(user);
